@@ -2,68 +2,92 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>戰略五子棋 - 完整版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>戰略五子棋 Pro</title>
     <style>
-        :root { --bg: #f2e6d9; --board: #b38f66; --cell: #d9b38c; --player: #2c3e50; --enemy: #c0392b; }
-        body { background: var(--bg); display: flex; flex-direction: column; align-items: center; font-family: sans-serif; margin: 0; padding: 20px; }
-        
-        #log { font-size: 1.4rem; font-weight: bold; margin-bottom: 15px; color: #5d4037; height: 35px; }
-        
-        #game-board { 
-            display: grid; grid-template-columns: repeat(10, 45px); grid-template-rows: repeat(10, 45px); 
-            gap: 2px; background: var(--board); border: 4px solid #8c664d; position: relative;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        :root {
+            --primary: #8c664d;
+            --accent: #e67e22;
+            --bg: #2c2c2c;
+            --board-bg: #d9b38c;
+            --p-color: #2c3e50;
+            --e-color: #c0392b;
         }
-        
-        .cell { width: 45px; height: 45px; background: var(--cell); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 24px; position: relative; }
-        .player { background: var(--player); color: white; border-radius: 4px; z-index: 2; }
-        .enemy { background: var(--enemy); color: white; border-radius: 4px; z-index: 2; }
-        
-        /* 動畫 */
-        .dash-effect { position: absolute; width: 45px; height: 45px; background: rgba(44, 62, 80, 0.6); border-radius: 4px; pointer-events: none; z-index: 10; transition: all 0.4s; }
-        @keyframes convert-pulse { 0% { background: #9b59b6; } 100% { background: var(--player); } }
-        .converting { animation: convert-pulse 0.6s ease-out; }
-        @keyframes win-blink { 0%, 100% { background: #f1c40f; transform: scale(1); } 50% { background: #fff; transform: scale(1.1); } }
-        .win-effect { animation: win-blink 0.5s infinite; z-index: 100; color: #000 !important; border-radius: 50% !important; }
 
-        /* 下方功能面板 */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background: var(--bg); color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; height: 100dvh; overflow: hidden; touch-action: manipulation;
+        }
+
+        #log { 
+            font-size: clamp(1rem, 4vh, 1.2rem); font-weight: bold; color: #f1c40f;
+            margin: 10px 0; text-align: center; height: 1.5em;
+        }
+
+        /* 響應式棋盤 */
+        #game-board { 
+            display: grid; grid-template-columns: repeat(10, 1fr); 
+            gap: 1.5px; background: #5d4037; border: 4px solid var(--primary);
+            width: min(90vw, 70vh); height: min(90vw, 70vh); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .cell { 
+            background: var(--board-bg); display: flex; align-items: center; justify-content: center; 
+            font-size: min(5vw, 4vh); cursor: pointer; transition: 0.2s; position: relative;
+        }
+
+        .player { background: var(--p-color) !important; border-radius: 4px; }
+        .enemy { background: var(--e-color) !important; border-radius: 4px; }
+
+        /* 特效 */
+        @keyframes win-blink { 0%, 100% { background: #f1c40f !important; transform: scale(1); } 50% { background: #fff !important; transform: scale(1.05); } }
+        .win-effect { animation: win-blink 0.5s infinite; z-index: 10; border-radius: 50% !important; }
+        .converting { animation: convert-pulse 0.6s ease-out; }
+        @keyframes convert-pulse { 0% { background: #9b59b6; } 100% { background: var(--p-color); } }
+
+        /* 下方操作面板 */
         #panel {
-            margin-top: 25px; width: 500px; background: #fff; border: 2px solid #8c664d; border-radius: 12px;
-            padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: min(95vw, 600px); background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+            border-radius: 15px; padding: 10px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.1);
         }
-        .hand-title { font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .hand { display: flex; gap: 12px; justify-content: center; margin-bottom: 15px; }
+
+        .hand { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
+        
         .card { 
-            width: 70px; height: 95px; background: #f9f9f9; border: 2px solid #ccc; border-radius: 8px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
+            width: 70px; height: 90px; background: #fff; border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; color: #333; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .card:hover { transform: translateY(-5px); }
-        .selected { border-color: #e67e22; background: #ffeaa7; transform: translateY(-10px); box-shadow: 0 5px 10px rgba(230,126,34,0.3); }
         
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; color: #666; background: #fdfdfd; padding: 10px; border-radius: 6px; }
-        .info-item b { color: #333; }
+        .card span { font-size: 24px; }
+        .card small { font-size: 10px; font-weight: bold; margin-top: 4px; }
+        .card.selected { transform: translateY(-12px); border: 3px solid var(--accent); box-shadow: 0 8px 15px rgba(230,126,34,0.4); }
+
+        .footer { display: flex; justify-content: space-between; align-items: center; padding: 0 5px; }
+        .info-text { font-size: 10px; color: #ccc; line-height: 1.4; max-width: 70%; }
         
-        .restart-btn { background: #c0392b; color: white; border: none; padding: 5px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; }
-        .restart-btn:hover { background: #a93226; }
+        .btn-restart { 
+            background: #e74c3c; color: #fff; border: none; padding: 8px 15px; 
+            border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <div id="log">準備開戰...</div>
+    <div id="log">載入中...</div>
     <div id="game-board"></div>
 
     <div id="panel">
-        <div class="hand-title">
-            您的手牌
-            <button class="restart-btn" onclick="location.reload()">重新開始</button>
-        </div>
         <div id="playerHand" class="hand"></div>
-        
-        <div class="info-grid">
-            <div class="info-item">🏰 <b>領主：</b>核心單位，五子連線即可獲勝。</div>
-            <div class="info-item">🏇 <b>騎士：</b>依箭頭方向衝鋒，殲滅首個敵軍。</div>
-            <div class="info-item">🧙 <b>法師：</b>洗腦左右單位變為我方城堡。</div>
-            <div class="info-item">👑 <b>皇后：</b>被動反制法師洗腦(30%反噬)。</div>
+        <div class="footer">
+            <div class="info-text">
+                🏰 領主: 勝負單位 | 🏇 騎士: 直線殺敵<br>
+                🧙 法師: 左右同化 | 👑 皇后: 反制法師
+            </div>
+            <button class="btn-restart" onclick="location.reload()">重新開始</button>
         </div>
     </div>
 
@@ -71,7 +95,6 @@
         const size = 10;
         let grid = Array(size).fill().map(() => Array(size).fill(null));
         let playerHand = [], aiHand = [], selectedIdx = null, gameOver = false;
-
         const UNITS = [
             { name: '領主', type: 'Lord', icon: '🏰' },
             { name: '法師', type: 'Mage', icon: '🧙' },
@@ -81,8 +104,7 @@
             { name: '騎士←', type: 'Knight', icon: '🏇', dr: 0, dc: -1 },
             { name: '騎士→', type: 'Knight', icon: '🏇', dr: 0, dc: 1 }
         ];
-
-        const roasts = ["菜就多練。", "就這點水平？", "你的領主看起來像在夢遊。", "贏你甚至不需要思考。"];
+        const roasts = ["菜就多練。", "就這點水平？", "太天真了。", "你是來送領地的嗎？"];
 
         function init() {
             const board = document.getElementById('game-board');
@@ -96,7 +118,7 @@
             }
             for(let i=0; i<3; i++) { playerHand.push(draw()); aiHand.push(draw()); }
             renderHand();
-            document.getElementById('log').innerText = "請選擇手牌並在棋盤布局";
+            document.getElementById('log').innerText = "您的回合";
         }
 
         const draw = () => UNITS[Math.floor(Math.random() * UNITS.length)];
@@ -107,19 +129,16 @@
             playerHand.forEach((c, i) => {
                 const d = document.createElement('div');
                 d.className = `card ${selectedIdx === i ? 'selected' : ''}`;
-                d.onclick = () => { if(!gameOver) { selectedIdx = i; renderHand(); } };
-                d.innerHTML = `<span style="font-size:28px">${c.icon}</span><small>${c.name}</small>`;
+                d.onclick = (e) => { e.stopPropagation(); if(!gameOver) { selectedIdx = i; renderHand(); } };
+                d.innerHTML = `<span>${c.icon}</span><small>${c.name}</small>`;
                 h.appendChild(d);
             });
         }
 
         async function playerMove(r, c) {
             if (gameOver || selectedIdx === null || grid[r][c]) return;
-            const card = playerHand[selectedIdx];
-            await execute(r, c, 'player', card);
-            
+            await execute(r, c, 'player', playerHand[selectedIdx]);
             if (getWinNodes(r, c, 'player')) return triggerWin(getWinNodes(r, c, 'player'), "恭喜佔領敵方領地");
-
             playerHand.splice(selectedIdx, 1); playerHand.push(draw());
             selectedIdx = null; renderHand();
             document.getElementById('log').innerText = "AI 思考中...";
@@ -130,18 +149,14 @@
             if (gameOver) return;
             let best = { score: -1, r: 0, c: 0, idx: 0 };
             aiHand.forEach((card, idx) => {
-                for(let r=0; r<size; r++) {
-                    for(let c=0; c<size; c++) {
-                        if (grid[r][c]) continue;
-                        let s = evaluate(r, c, card);
-                        if (s > best.score) best = { score: s, r, c, idx };
-                    }
+                for(let r=0; r<size; r++) for(let c=0; c<size; c++) {
+                    if (grid[r][c]) continue;
+                    let s = evaluate(r, c, card);
+                    if (s > best.score) best = { score: s, r, c, idx };
                 }
             });
             await execute(best.r, best.c, 'enemy', aiHand[best.idx]);
-            if (getWinNodes(best.r, best.c, 'enemy')) {
-                return triggerWin(getWinNodes(best.r, best.c, 'enemy'), roasts[Math.floor(Math.random() * roasts.length)]);
-            }
+            if (getWinNodes(best.r, best.c, 'enemy')) return triggerWin(getWinNodes(best.r, best.c, 'enemy'), roasts[Math.floor(Math.random() * roasts.length)]);
             aiHand.splice(best.idx, 1); aiHand.push(draw());
             document.getElementById('log').innerText = "您的回合";
         }
@@ -149,8 +164,7 @@
         function evaluate(r, c, card) {
             if (card.type !== 'Lord') return Math.random() * 5;
             let pS = getCount(r, c, 'player'), eS = getCount(r, c, 'enemy');
-            if (eS >= 5) return 1000;
-            if (pS >= 5) return 500;
+            if (eS >= 5) return 1000; if (pS >= 5) return 500;
             return eS * 10 + pS * 5;
         }
 
@@ -158,39 +172,24 @@
             update(r, c, side, card);
             if (card.type === 'Knight') {
                 let nr = r + card.dr, nc = c + card.dc;
-                let target = null;
                 while(nr>=0 && nr<size && nc>=0 && nc<size) {
-                    if(grid[nr][nc] && grid[nr][nc].side !== side) { target = {r:nr, c:nc}; break; }
+                    if(grid[nr][nc] && grid[nr][nc].side !== side) { update(nr, nc, null, null); break; }
                     nr += card.dr; nc += card.dc;
-                }
-                if(target) {
-                    await playDashAnim(r, c, target.r, target.c);
-                    update(target.r, target.c, null, null);
                 }
             } else if (card.type === 'Mage') {
                 const hasQ = grid.flat().some(x => x?.side !== side && x?.unit.type === 'Queen');
                 if (hasQ && Math.random() < 0.3) {
                     update(r, c, side === 'player' ? 'enemy' : 'player', UNITS[0]);
                 } else {
-                    const targets = [[r, c-1], [r, c+1]].filter(([tr, tc]) => grid[tr]?.[tc] && grid[tr][tc].side !== side);
-                    for(let [tr, tc] of targets) {
-                        document.getElementById(`c-${tr}-${tc}`).classList.add('converting');
-                        update(tr, tc, side, UNITS[0]);
-                    }
+                    [c-1, c+1].forEach(nc => {
+                        if (grid[r]?.[nc] && grid[r][nc].side !== side) {
+                            document.getElementById(`c-${r}-${nc}`).classList.add('converting');
+                            update(r, nc, side, UNITS[0]);
+                        }
+                    });
                 }
             }
-            return new Promise(res => setTimeout(res, 300));
-        }
-
-        function playDashAnim(sr, sc, tr, tc) {
-            return new Promise(res => {
-                const ghost = document.createElement('div');
-                ghost.className = 'dash-effect';
-                ghost.style.top = (sr * 47) + 'px'; ghost.style.left = (sc * 47) + 'px';
-                document.getElementById('game-board').appendChild(ghost);
-                setTimeout(() => { ghost.style.top = (tr * 47) + 'px'; ghost.style.left = (tc * 47) + 'px'; ghost.style.opacity = '0'; }, 10);
-                setTimeout(() => { ghost.remove(); res(); }, 400);
-            });
+            return new Promise(res => setTimeout(res, 200));
         }
 
         function update(r, c, side, unit) {
